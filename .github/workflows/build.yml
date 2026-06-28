@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-tapi:
+  build-windows:
     runs-on: windows-latest
     defaults:
       run:
@@ -13,24 +13,24 @@ jobs:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
-    - name: Setup TAPI Cache
-      id: cache-tapi
-      uses: actions/cache@v4
-      with:
-        path: D:\a\_temp\msys64
-        key: msys2-full-tree-v4-${{ runner.os }}
-
     - name: Setup MSYS2
-      if: steps.cache-tapi.outputs.cache-hit != 'true'
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         update: true
         install: >-
-          git mingw-w64-x86_64-cmake mingw-w64-x86_64-clang mingw-w64-x86_64-ninja
+          git
+          make
+          autoconf
+          automake
+          libtool
+          pkg-config
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-clang
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-ninja
 
     - name: Build apple-libtapi
-      if: steps.cache-tapi.outputs.cache-hit != 'true'
       run: |
         git clone --depth=1 https://github.com/tpoechtrager/apple-libtapi -b 1600.0.11.8
         cd apple-libtapi
@@ -38,7 +38,6 @@ jobs:
         sed -i 's/FILE_RENAME_INFO_EX/FILE_RENAME_INFO/g' src/llvm/lib/Support/Windows/Path.inc
         sed -i 's/#if defined(HAVE_UNISTD_H)/#if defined(HAVE_UNISTD_H) \&\& !defined(_WIN32)/g' src/llvm/lib/CAS/CachingOnDiskFileSystem.cpp
         sed -i '1i #include <cstdint>' src/llvm/lib/Target/AMDGPU/MCTargetDesc/AMDGPUMCTargetDesc.h || true
-        
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
@@ -51,29 +50,11 @@ jobs:
         ninja
         cmake --install .
 
-  build-dispatch:
-    runs-on: windows-latest
-    needs: build-tapi
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - name: Checkout Source Code
-      uses: actions/checkout@v4
-
-    - name: Load TAPI Environment
-      uses: actions/cache@v4
-      with:
-        path: D:\a\_temp\msys64
-        key: msys2-full-tree-v4-${{ runner.os }}
-
     - name: Build apple-libdispatch
       run: |
         git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
         cd apple-libdispatch
-        
-        sed -i 's/void _dispatch_bug_deprecated(const char\* msg);/#define _dispatch_bug_deprecated(msg) do {} while(0)/g' src/internal.h
-        
+        sed -i 's/void _dispatch_bug_deprecated.*/#define _dispatch_bug_deprecated(msg) do {} while(0)/g' src/internal.h
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
@@ -83,26 +64,6 @@ jobs:
           ..
         ninja
         cmake --install .
-
-  build-ld64:
-    runs-on: windows-latest
-    needs: build-dispatch
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-    - name: Checkout Source Code
-      uses: actions/checkout@v4
-
-    - name: Load Prebuilt Environment
-      uses: actions/cache@v4
-      with:
-        path: D:\a\_temp\msys64
-        key: msys2-full-tree-v4-${{ runner.os }}
-
-    - name: Install Autotools inside cached MSYS2
-      run: |
-        pacman -S --noconfirm --needed make autoconf automake libtool pkg-config mingw-w64-x86_64-gcc
 
     - name: Build cctools-port (ld64)
       run: |
@@ -114,9 +75,7 @@ jobs:
           --with-libtapi=/mingw64 \
           --with-libdispatch=/mingw64 \
           --with-libblocksruntime=/mingw64
-        
         mingw32-make -j$(nproc)
-        
         mkdir -p ${{ github.workspace }}/output_dist
         cp -v ld64/src/ld/ld.exe ${{ github.workspace }}/output_dist/arm-apple-darwin11-ld64.exe
         cp -v /mingw64/bin/libtapi.dll ${{ github.workspace }}/output_dist/ || true
