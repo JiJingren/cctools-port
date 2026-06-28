@@ -19,9 +19,9 @@ jobs:
         path: |
           D:\a\_temp\msys64\var\cache\pacman\pkg
           D:\a\_temp\msys64\mingw64
-        key: msys2-mingw64-v1-${{ runner.os }}-${{ github.run_id }}
+        key: msys2-mingw64-v2-${{ runner.os }}-${{ github.run_id }}
         restore-keys: |
-          msys2-mingw64-v1-${{ runner.os }}-
+          msys2-mingw64-v2-${{ runner.os }}-
 
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -70,6 +70,10 @@ jobs:
         echo "Cloning apple-libdispatch..."
         git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
         cd apple-libdispatch
+        
+        sed -i '1i void _dispatch_bug_deprecated(const char* msg) {}' src/init.c || true
+        sed -i '1i __declspec(dllexport) void _dispatch_bug_deprecated(const char* msg);' src/internal.h || true
+        
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
