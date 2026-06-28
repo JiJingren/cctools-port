@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up MSVC (Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Install Ninja and Automake Tools
+      run: |
+        choco install ninja
+
+    - name: Setup Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build/.ninja_log
+          ${{ github.workspace }}/build/.ninja_deps
+        key: ${{ runner.os }}-cctools-port-${{ github.hash }}
+        restore-keys: |
+          ${{ runner.os }}-cctools-port-
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -G Ninja `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" `
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install_dist" `
+          ..
+
+    - name: Build and Install with Ninja
+      run: |
+        cd build
+        $cpu_count = $env:NUMBER_OF_PROCESSORS
+        ninja -j $cpu_count
+        ninja install
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cctools-port-windows-static
+        path: ${{ github.workspace }}/install_dist/
