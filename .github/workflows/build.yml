@@ -6,46 +6,90 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
-    - name: Set up MSVC (Visual Studio)
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Install Ninja and Automake Tools
-      run: |
-        choco install ninja
-
-    - name: Setup Cache
-      uses: actions/cache@v4
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
       with:
-        path: |
-          ${{ github.workspace }}/build/.ninja_log
-          ${{ github.workspace }}/build/.ninja_deps
-        key: ${{ runner.os }}-cctools-port-${{ github.hash }}
-        restore-keys: |
-          ${{ runner.os }}-cctools-port-
+        msystem: MINGW64
+        update: true
+        install: >-
+          git
+          make
+          autoconf
+          automake
+          libtool
+          pkg-config
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-clang
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-ninja
 
-    - name: Configure CMake
+    - name: Build apple-libtapi
       run: |
-        mkdir build
-        cd build
-        cmake -G Ninja `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" `
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install_dist" `
+        echo "Cloning apple-libtapi..."
+        git clone --depth=1 https://github.com/tpoechtrager/apple-libtapi -b 1600.0.11.8
+        cd apple-libtapi
+        
+        sed -i 's/FileRenameInfoEx/FileRenameInfo/g' src/llvm/lib/Support/Windows/Path.inc
+        sed -i 's/FILE_RENAME_INFO_EX/FILE_RENAME_INFO/g' src/llvm/lib/Support/Windows/Path.inc
+        sed -i 's/#if defined(HAVE_UNISTD_H)/#if defined(HAVE_UNISTD_H) \&\& !defined(_WIN32)/g' src/llvm/lib/CAS/CachingOnDiskFileSystem.cpp
+        
+        mkdir build && cd build
+        cmake -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_INCLUDE_TESTS=OFF \
+          -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
+          -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
+          -DCMAKE_INSTALL_PREFIX=/mingw64 \
+          ../src/llvm
+        
+        ninja
+        cmake --install .
+
+    - name: Build apple-libdispatch
+      run: |
+        echo "Cloning apple-libdispatch..."
+        git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
+        cd apple-libdispatch
+        mkdir build && cd build
+        cmake -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
+          -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
+          -DCMAKE_INSTALL_PREFIX=/mingw64 \
           ..
+        ninja
+        cmake --install .
 
-    - name: Build and Install with Ninja
+    - name: Build cctools-port (ld64)
       run: |
-        cd build
-        $cpu_count = $env:NUMBER_OF_PROCESSORS
-        ninja -j $cpu_count
-        ninja install
+        echo "Configuring cctools-port..."
+        cd cctools
+        ./autogen.sh
+        ./configure \
+          --program-prefix=arm-apple-darwin11- \
+          --enable-tapi-support \
+          --with-libtapi=/mingw64 \
+          --with-libdispatch=/mingw64 \
+          --with-libblocksruntime=/mingw64
+        
+        mingw32-make -j$(nproc)
+        
+        mkdir -p ${{ github.workspace }}/output_dist
+        cp -v ld64/src/ld/ld.exe ${{ github.workspace }}/output_dist/arm-apple-darwin11-ld64.exe
+        cp -v /mingw64/bin/libtapi.dll ${{ github.workspace }}/output_dist/ || true
+        cp -v /mingw64/bin/libwinpthread-1.dll ${{ github.workspace }}/output_dist/ || true
+        cp -v /mingw64/bin/libstdc++-6.dll ${{ github.workspace }}/output_dist/ || true
+        cp -v /mingw64/bin/libgcc_s_seh-1.dll ${{ github.workspace }}/output_dist/ || true
 
-    - name: Upload Artifact
+    - name: Upload Finished Toolchain
       uses: actions/upload-artifact@v4
       with:
-        name: cctools-port-windows-static
-        path: ${{ github.workspace }}/install_dist/
+        name: ios-toolchain-windows-ld64
+        path: ${{ github.workspace }}/output_dist/
