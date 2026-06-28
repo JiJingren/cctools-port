@@ -13,6 +13,16 @@ jobs:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
+    - name: Setup MSYS2 Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          D:\a\_temp\msys64\var\cache\pacman\pkg
+          D:\a\_temp\msys64\mingw64
+        key: msys2-mingw64-v1-${{ runner.os }}-${{ github.run_id }}
+        restore-keys: |
+          msys2-mingw64-v1-${{ runner.os }}-
+
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -40,10 +50,13 @@ jobs:
         sed -i 's/FILE_RENAME_INFO_EX/FILE_RENAME_INFO/g' src/llvm/lib/Support/Windows/Path.inc
         sed -i 's/#if defined(HAVE_UNISTD_H)/#if defined(HAVE_UNISTD_H) \&\& !defined(_WIN32)/g' src/llvm/lib/CAS/CachingOnDiskFileSystem.cpp
         
+        sed -i '1i #include <cstdint>' src/llvm/lib/Target/AMDGPU/MCTargetDesc/AMDGPUMCTargetDesc.h || true
+        
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
           -DLLVM_INCLUDE_TESTS=OFF \
+          -DLLVM_TARGETS_TO_BUILD="AArch64;ARM" \
           -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
           -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
           -DCMAKE_INSTALL_PREFIX=/mingw64 \
