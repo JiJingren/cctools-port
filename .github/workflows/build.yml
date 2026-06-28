@@ -9,8 +9,6 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
-    outputs:
-      cache-key: ${{ steps.set-key.outputs.key }}
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
@@ -19,8 +17,8 @@ jobs:
       id: cache-tapi
       uses: actions/cache@v4
       with:
-        path: D:\a\_temp\msys64\mingw64
-        key: msys2-tapi-v3-${{ runner.os }}
+        path: D:\a\_temp\msys64
+        key: msys2-full-tree-v4-${{ runner.os }}
 
     - name: Setup MSYS2
       if: steps.cache-tapi.outputs.cache-hit != 'true'
@@ -66,27 +64,10 @@ jobs:
     - name: Load TAPI Environment
       uses: actions/cache@v4
       with:
-        path: D:\a\_temp\msys64\mingw64
-        key: msys2-tapi-v3-${{ runner.os }}
-
-    - name: Setup Dispatch Cache
-      id: cache-dispatch
-      uses: actions/cache@v4
-      with:
-        path: D:\a\_temp\msys64\mingw64
-        key: msys2-dispatch-v3-${{ runner.os }}
-
-    - name: Setup MSYS2
-      if: steps.cache-dispatch.outputs.cache-hit != 'true'
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: >-
-          git mingw-w64-x86_64-cmake mingw-w64-x86_64-clang mingw-w64-x86_64-ninja
+        path: D:\a\_temp\msys64
+        key: msys2-full-tree-v4-${{ runner.os }}
 
     - name: Build apple-libdispatch
-      if: steps.cache-dispatch.outputs.cache-hit != 'true'
       run: |
         git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
         cd apple-libdispatch
@@ -116,16 +97,12 @@ jobs:
     - name: Load Prebuilt Environment
       uses: actions/cache@v4
       with:
-        path: D:\a\_temp\msys64\mingw64
-        key: msys2-dispatch-v3-${{ runner.os }}
+        path: D:\a\_temp\msys64
+        key: msys2-full-tree-v4-${{ runner.os }}
 
-    - name: Setup MSYS2
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: >-
-          git make autoconf automake libtool pkg-config mingw-w64-x86_64-gcc
+    - name: Install Autotools inside cached MSYS2
+      run: |
+        pacman -S --noconfirm --needed make autoconf automake libtool pkg-config mingw-w64-x86_64-gcc
 
     - name: Build cctools-port (ld64)
       run: |
