@@ -54,17 +54,14 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
         cd apple-libdispatch
-        
-        sed -i '1i __declspec(dllexport) void _dispatch_bug_deprecated(const char* msg) { (void)msg; }' src/init.c
-        sed -i 's/.*_dispatch_bug_deprecated.*/__declspec(dllexport) void _dispatch_bug_deprecated_orig(const char* msg);/g' src/internal.h
-        sed -i 's/_dispatch_bug_deprecated(/_dispatch_bug_deprecated_orig(/g' src/init.c
-        
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
           -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
           -DCMAKE_INSTALL_PREFIX=/mingw64 \
+          -DCMAKE_C_FLAGS="-D_dispatch_bug_deprecated(msg)=printf(msg)" \
+          -DCMAKE_CXX_FLAGS="-D_dispatch_bug_deprecated(msg)=printf(msg)" \
           ..
         ninja
         cmake --install .
