@@ -20,17 +20,11 @@ jobs:
         update: true
         install: >-
           git
-          make
-          autoconf
-          automake
-          libtool
-          pkg-config
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-clang
-          mingw-w64-x86_64-gcc
           mingw-w64-x86_64-ninja
 
-    - name: Build apple-libtapi
+    - name: Build and Package apple-libtapi
       run: |
         git clone --depth=1 https://github.com/tpoechtrager/apple-libtapi -b 1600.0.11.8
         cd apple-libtapi
@@ -38,6 +32,7 @@ jobs:
         sed -i 's/FILE_RENAME_INFO_EX/FILE_RENAME_INFO/g' src/llvm/lib/Support/Windows/Path.inc
         sed -i 's/#if defined(HAVE_UNISTD_H)/#if defined(HAVE_UNISTD_H) \&\& !defined(_WIN32)/g' src/llvm/lib/CAS/CachingOnDiskFileSystem.cpp
         sed -i '1i #include <cstdint>' src/llvm/lib/Target/AMDGPU/MCTargetDesc/AMDGPUMCTargetDesc.h || true
+        
         mkdir build && cd build
         cmake -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
@@ -48,44 +43,12 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=/mingw64 \
           ../src/llvm
         ninja
-        cmake --install .
+        
+        mkdir -p ${{ github.workspace }}/tapi_dist
+        DESTDIR=${{ github.workspace }}/tapi_dist cmake --install .
 
-    - name: Build apple-libdispatch
-      run: |
-        git clone --depth=1 https://github.com/tpoechtrager/apple-libdispatch/
-        cd apple-libdispatch
-        mkdir build && cd build
-        cmake -G "Ninja" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
-          -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
-          -DCMAKE_INSTALL_PREFIX=/mingw64 \
-          -DCMAKE_C_FLAGS="-D_dispatch_bug_deprecated(msg)=printf(msg)" \
-          -DCMAKE_CXX_FLAGS="-D_dispatch_bug_deprecated(msg)=printf(msg)" \
-          ..
-        ninja
-        cmake --install .
-
-    - name: Build cctools-port (ld64)
-      run: |
-        cd cctools
-        ./autogen.sh
-        ./configure \
-          --program-prefix=arm-apple-darwin11- \
-          --enable-tapi-support \
-          --with-libtapi=/mingw64 \
-          --with-libdispatch=/mingw64 \
-          --with-libblocksruntime=/mingw64
-        mingw32-make -j$(nproc)
-        mkdir -p ${{ github.workspace }}/output_dist
-        cp -v ld64/src/ld/ld.exe ${{ github.workspace }}/output_dist/arm-apple-darwin11-ld64.exe
-        cp -v /mingw64/bin/libtapi.dll ${{ github.workspace }}/output_dist/ || true
-        cp -v /mingw64/bin/libwinpthread-1.dll ${{ github.workspace }}/output_dist/ || true
-        cp -v /mingw64/bin/libstdc++-6.dll ${{ github.workspace }}/output_dist/ || true
-        cp -v /mingw64/bin/libgcc_s_seh-1.dll ${{ github.workspace }}/output_dist/ || true
-
-    - name: Upload Finished Toolchain
+    - name: Upload Prebuilt TAPI Toolchain
       uses: actions/upload-artifact@v4
       with:
-        name: ios-toolchain-windows-ld64
-        path: ${{ github.workspace }}/output_dist/
+        name: apple-libtapi-mingw64-standalone
+        path: ${{ github.workspace }}/tapi_dist/mingw64/
