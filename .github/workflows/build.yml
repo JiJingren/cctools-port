@@ -40,15 +40,13 @@ jobs:
           -DLLVM_TARGETS_TO_BUILD="AArch64;ARM" \
           -DCMAKE_C_COMPILER=/mingw64/bin/clang.exe \
           -DCMAKE_CXX_COMPILER=/mingw64/bin/clang++.exe \
-          -DCMAKE_INSTALL_PREFIX=/mingw64 \
+          -DCMAKE_INSTALL_PREFIX="D:/tapi_output" \
           ../src/llvm
         ninja
-        
-        mkdir -p ${{ github.workspace }}/tapi_dist
-        DESTDIR=${{ github.workspace }}/tapi_dist cmake --install .
+        cmake --install .
 
     - name: Upload Prebuilt TAPI Toolchain
       uses: actions/upload-artifact@v4
       with:
         name: apple-libtapi-mingw64-standalone
-        path: ${{ github.workspace }}/tapi_dist/mingw64/
+        path: D:\tapi_output\
