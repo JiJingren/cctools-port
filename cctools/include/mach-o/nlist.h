@@ -75,7 +75,9 @@
  */
 struct nlist {
 	union {
-#ifndef __LP64__
+/* the in-core pointer widens the union to host pointer size, but the on-disk
+ * nlist for 32-bit architectures is always 12 bytes; gate it on a 32-bit host */
+#if !defined(__LP64__) && !defined(_WIN64) && !defined(__x86_64__) && !defined(__aarch64__)
 		char *n_name;	/* for use when in-core */
 #endif
 		uint32_t n_strx;	/* index into the string table */

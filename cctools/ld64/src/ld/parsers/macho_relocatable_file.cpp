@@ -3609,7 +3609,7 @@ uint32_t Parser<A>::indirectSymbol(uint32_t indirectIndex)
 template <typename A>
 const macho_nlist<typename A::P>& Parser<A>::symbolFromIndex(uint32_t index)
 {
-	if ( index > _symbolCount )
+	if ( index >= _symbolCount )
 		throw "symbol index out of range";
 	if ( _symbols == NULL )
 		throw "no symbol table";
