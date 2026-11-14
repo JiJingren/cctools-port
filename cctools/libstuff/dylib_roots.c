@@ -28,11 +28,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-#if defined(__APPLE__) || defined(__GLIBC__) || defined(__MINGW32__)
+#if defined(__APPLE__) || defined(__GLIBC__)
 #define HAVE_FTS
 #include <fts.h>
 #endif
-#include <sys/errno.h>
+/* sys/errno.h removed for mingw */
 #include <errno.h> /* cctools-port */
 #include "stuff/bool.h"
 #include "stuff/SymLoc.h"

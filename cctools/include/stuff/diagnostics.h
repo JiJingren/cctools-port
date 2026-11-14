@@ -88,7 +88,7 @@ void diagnostics_write(void);
 #  endif
 #endif
 #ifndef HAVE_OPENMEMSTREAM_RUNTIME
-#  define HAVE_OPENMEMSTREAM_RUNTIME 1
+#define HAVE_OPENMEMSTREAM_RUNTIME 0
 #endif
 
 #endif /* diagnostics_h */

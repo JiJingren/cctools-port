@@ -21,6 +21,8 @@
  * @APPLE_LICENSE_HEADER_END@
  */
 #ifndef RLD
+#undef HAVE_OPENMEMSTREAM_RUNTIME
+#define HAVE_OPENMEMSTREAM_RUNTIME 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -61,7 +63,7 @@ char *format,
 	    char* buf;
 	    size_t len;
 
-	    FILE* stream = open_memstream(&buf, &len);
+	    FILE* stream = cct_open_memstream(&buf, &len);
 	    if (stream) {
 		va_start(ap, format);
 		vfprintf(stream, format, ap);
@@ -120,7 +122,7 @@ char *format,
 	    char* buf;
 	    size_t len;
 
-	    FILE* stream = open_memstream(&buf, &len);
+	    FILE* stream = cct_open_memstream(&buf, &len);
 	    if (stream) {
 		va_start(ap, format);
 		vfprintf(stream, format, ap);
@@ -178,7 +180,7 @@ char *format,
 	    char* buf;
 	    size_t len;
 
-	    FILE* stream = open_memstream(&buf, &len);
+	    FILE* stream = cct_open_memstream(&buf, &len);
 	    if (stream) {
 		va_start(ap, format);
 		vfprintf(stream, format, ap);

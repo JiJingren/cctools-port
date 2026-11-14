@@ -25,7 +25,7 @@
 #ifndef __INPUT_FILES_H__
 #define __INPUT_FILES_H__
 
-#define HAVE_PTHREADS 1
+#define HAVE_PTHREADS 0
 
 #include <stdlib.h>
 #include <sys/types.h>

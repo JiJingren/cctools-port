@@ -1,18 +1,3 @@
-#ifndef _LIBC_H
-#define _LIBC_H
-
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include <fcntl.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/param.h>
-
+#ifndef _CCT_LIBC_H_
+#define _CCT_LIBC_H_
 #endif

@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h> /* cctools-port */
-#include <sys/errno.h>
+/* sys/errno.h removed for mingw */
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>

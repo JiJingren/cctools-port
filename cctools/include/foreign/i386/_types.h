@@ -42,7 +42,7 @@
 #pragma clang diagnostic ignored "-Wtypedef-redefinition"
 #endif
 
-#ifndef __CYGWIN__
+#if !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__MINGW32__)
 #ifdef __GNUC__
 typedef __signed char           __int8_t;
 #else	/* !__GNUC__ */
@@ -60,7 +60,7 @@ typedef unsigned int            __uint32_t;
 typedef __INT64_TYPE__          __int64_t;
 typedef unsigned __INT64_TYPE__ __uint64_t;
 #else
-#if __SIZEOF_POINTER__ == 8 && !defined(__CYGWIN__)
+#if __SIZEOF_POINTER__ == 8 && !defined(__CYGWIN__) && !defined(__MINGW32__) || defined(__MINGW32__)
 typedef long int                __int64_t;
 typedef unsigned long int       __uint64_t;
 #else
@@ -70,7 +70,7 @@ typedef unsigned long long int  __uint64_t;
 #endif
 
 typedef long                    __darwin_intptr_t;
-#ifdef __CYGWIN__
+#if 0
 typedef unsigned long           __darwin_natural_t;
 #else
 typedef unsigned int            __darwin_natural_t;

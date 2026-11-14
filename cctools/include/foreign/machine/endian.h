@@ -28,8 +28,7 @@
 /*
  * Copyright 1995 NeXT Computer, Inc. All rights reserved.
  */
-#if defined(__FreeBSD__)   || defined(__NetBSD__) || defined(__OpenBSD__) || \
-    defined(__DragonFly__) || defined(__CYGWIN__)
+#if 0
 #include_next <machine/endian.h>
 #else
 #ifndef _BSD_MACHINE_ENDIAN_H_

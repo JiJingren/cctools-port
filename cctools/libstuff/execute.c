@@ -63,6 +63,17 @@ int verbose)
 	    fprintf(stderr, "\n");
 	}
 
+#ifdef __MINGW32__
+	{
+		intptr_t _rc = _spawnvp(_P_WAIT, name, (const char * const *)argv);
+		if(_rc == -1)
+		    system_fatal("can't execute: %s", name);
+		if(_rc != 0)
+		    fprintf(stderr, "cctools: %s exited with status %ld\n", name, (long)_rc);
+		return(_rc == 0);
+	}
+#endif
+
 	forkpid = fork();
 	if(forkpid == -1)
 	    system_fatal("can't fork a new process to execute: %s", name);
@@ -154,6 +165,27 @@ char *str)
 	char *p;
 	char *prefix, buf[MAXPATHLEN], resolved_name[PATH_MAX];
 	uint32_t bufsize;
+#define CCT_MINGW_EXEC 1
+#ifdef __MINGW32__
+	{
+		char *_mp;
+		int _i;
+		DWORD _n = GetModuleFileNameA(NULL, buf, MAXPATHLEN);
+		prefix = "";
+		if (_n > 0 && _n < (DWORD)MAXPATHLEN) {
+			buf[_n] = 0;
+			for (_i = 0; buf[_i]; _i++)
+				if (buf[_i] == 92)
+					buf[_i] = '/';
+			_mp = strrchr(buf, '/');
+			if (_mp)
+				_mp[1] = 0;
+			prefix = buf;
+		}
+		return makestr(prefix, PROGRAM_PREFIX, str, NULL);
+	}
+#endif
+
 
 	/*
 	 * Construct the prefix to the program running.

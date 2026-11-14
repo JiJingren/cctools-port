@@ -30,6 +30,8 @@
  *  rdar://64357409 and the clang's lib/Frontend/LogDiagnosticPrinter.cpp.
  */
 
+#undef HAVE_OPENMEMSTREAM_RUNTIME
+#define HAVE_OPENMEMSTREAM_RUNTIME 0
 #include "stuff/diagnostics.h" /* cctools-port: diagnostics.h -> stuff/diagnostics.h */
 
 #include "stuff/errors.h"
@@ -127,7 +129,7 @@ void diagnostics_log_args(int argc, char** argv)
     }
 
     if (HAVE_OPENMEMSTREAM_RUNTIME) {  // cctools-port
-    stream = open_memstream(&buf, &len);
+    stream = cct_open_memstream(&buf, &len);
     if (stream) {
 	for (int i = 1; i < argc; ++i) {
 	    fprintf(stream, "%s%s", i == 1 ? "" : " ", argv[i]);
@@ -167,7 +169,7 @@ void diagnostics_write(void)
      */
     if (HAVE_OPENMEMSTREAM_RUNTIME) { // cctools-port
     if (diagnostics_enabled())
-    stream = open_memstream(&buf, &len);
+    stream = cct_open_memstream(&buf, &len);
     } // cctools-port
     if (!stream)
 	return;

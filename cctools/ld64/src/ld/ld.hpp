@@ -714,7 +714,7 @@ private:
 //
 //
 #pragma clang diagnostic push
-#pragma clang diagnostic error "-Wpadded"
+/* -Wpadded error disabled for mingw */
 struct Fixup 
 {
 	enum TargetBinding { bindingNone, bindingByNameUnbound, bindingDirectlyBound, bindingByContentBound, bindingsIndirectlyBound };

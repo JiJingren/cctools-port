@@ -51,7 +51,7 @@ _mkpath_np(const char *path, mode_t omode, const char ** firstdir)
 	struct stat sbuf;
 
 	/* Try the trivial case first. */
-	if (0 == mkdir(path, omode)) {
+	if (0 == _mkdir(path)) {
 		if (firstdir) {
 			*firstdir = strdup(path);
 		}
@@ -103,7 +103,7 @@ _mkpath_np(const char *path, mode_t omode, const char ** firstdir)
 		*s = '\0';
 		depth++;
 
-		if (0 == mkdir(apath, S_IRWXU | S_IRWXG | S_IRWXO)) {
+		if (0 == _mkdir(apath)) {
 			/* Found our starting point */
 
 			/* POSIX 1003.2:
@@ -163,7 +163,7 @@ _mkpath_np(const char *path, mode_t omode, const char ** firstdir)
 		*s = '/';
 		depth--;
 
-		if (-1 == mkdir(apath, S_IRWXU | S_IRWXG | S_IRWXO)) {
+		if (-1 == _mkdir(apath)) {
 			/* This handles "." and ".." added to the new section of path */
 			if (errno == EEXIST)
 				continue;
@@ -180,7 +180,7 @@ _mkpath_np(const char *path, mode_t omode, const char ** firstdir)
 		}
 	}
 
-	if (-1 == mkdir(path, omode)) {
+	if (-1 == _mkdir(path)) {
 		retval = errno;
 		if (errno == EEXIST &&
 		    stat(path, &sbuf) == 0 &&
