@@ -3493,8 +3493,6 @@ uint32_t TentativeDefinitionSection<A>::computeAtomCount(class Parser<A>& parser
 		if ( ((sym.n_type() & N_TYPE) == N_UNDF) && (sym.n_value() != 0) )
 			++count;
 	}
-	// must agree with the count prescanSymbolTable() produced, since that gates
-	// whether this section is synthesized at all
 	assert( count == tentativeDefinitionCount );
 	(void)tentativeDefinitionCount;
 	return count;
@@ -3507,15 +3505,8 @@ uint32_t TentativeDefinitionSection<A>::appendAtoms(class Parser<A>& parser, uin
 {
 	this->_beginAtoms = (Atom<A>*)p;
 	uint32_t count = 0;
-	// <rdar://problem/...> scan the whole symbol table, not just the LC_DYSYMTAB
-	// undefined window: computeAtomCount() counts tentative definitions over all
-	// symbols (prescanSymbolTable), so restricting appendAtoms() to
-	// [undefinedStartIndex, undefinedEndIndex) makes the two passes disagree
-	// whenever a common symbol falls outside that window, tripping the
-	// "more atoms allocated than expected" assert.
 	for (uint32_t i=0; i < parser.symbolCount(); ++i) {
 		const macho_nlist<P>& sym =	parser.symbolFromIndex(i);
-		// ignore stabs, like prescanSymbolTable()
 		if ( (sym.n_type() & N_STAB) != 0 )
 			continue;
 		if ( ((sym.n_type() & N_TYPE) == N_UNDF) && (sym.n_value() != 0) ) {
